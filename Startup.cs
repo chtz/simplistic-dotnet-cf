@@ -10,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Context;
 
 namespace TodoApi
 {
@@ -36,7 +38,14 @@ namespace TodoApi
                 app.UseDeveloperExceptionPage();
             }
 
-            //app.UseHttpsRedirection();
+            //app.UseSerilogRequestLogging();
+            app.Use(async (context, next) =>
+            {
+                using (LogContext.PushProperty("Request", context.Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()), destructureObjects: true)) //overkill ;-)
+                {
+                    await next.Invoke();
+                }
+            });
 
             app.UseRouting();
 
