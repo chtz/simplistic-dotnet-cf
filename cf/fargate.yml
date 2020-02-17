@@ -1,0 +1,183 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  VPC:
+    Type: "AWS::EC2::VPC::Id"
+
+  Subnets:
+    Type: "List<AWS::EC2::Subnet::Id>"
+
+  DockerImageTag:
+    Type: String
+    Default: latest
+
+  DesiredCount:
+    Type: Number    
+    Default: 0
+
+  ServiceName:
+    Type: String
+    AllowedPattern: "[a-z0-9]+"
+    Default: myimage
+
+Resources:
+  LoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Name: !Ref ServiceName
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: 60
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref LoadBalancerSecurityGroup
+      Subnets: !Ref Subnets
+
+  LoadBalancerSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: HTTP 80
+      SecurityGroupIngress:
+        - CidrIp: "0.0.0.0/0"
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+      VpcId: !Ref VPC
+
+  Listener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  TargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /WeatherForecast
+      HealthCheckTimeoutSeconds: 2
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 4
+      Port: 80
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 60
+      TargetType: ip
+      VpcId: !Ref VPC
+
+  ECSExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+      MaxSessionDuration: 3600
+      Path: /service-role/
+
+  FargateCluster:
+    Type: "AWS::ECS::Cluster"
+    Properties:
+      ClusterName: !Ref ServiceName
+
+  FargateService:
+    Type: "AWS::ECS::Service"
+    DependsOn: Listener
+    Properties:
+      ServiceName: !Ref ServiceName
+      Cluster: !Ref FargateCluster
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: !Ref DesiredCount
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: application
+          ContainerPort: 80
+          TargetGroupArn: !Ref TargetGroup
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - Ref: FargateSecurityGroup
+          Subnets: !Ref Subnets
+      PlatformVersion: LATEST
+      SchedulingStrategy: REPLICA
+      TaskDefinition: !Ref TaskDefinition
+
+  FargateSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: HTTP 8080
+      SecurityGroupIngress:
+        - FromPort: 80
+          IpProtocol: tcp
+          SourceSecurityGroupId: !GetAtt LoadBalancerSecurityGroup.GroupId
+          ToPort: 80          
+      VpcId: !Ref VPC
+
+  TaskDefinition:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ContainerDefinitions:
+        - Cpu: "1024"
+          Essential: true
+          Image: !Join
+            - ""
+            - - Ref: "AWS::AccountId"
+              - .dkr.ecr.
+              - Ref: "AWS::Region"
+              - .amazonaws.com/
+              - !Ref ECRRepository
+              - ":"
+              - !Ref DockerImageTag
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref TaskLogGroup
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: ecs
+          Memory: "2048"
+          MemoryReservation: "2048"
+          Name: application
+          PortMappings:
+            - ContainerPort: 80
+              Protocol: tcp
+      Cpu: "1024"
+      ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
+      Family: !Ref ServiceName
+      Memory: "2048"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+
+  TaskLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Join
+        - ""
+        - - /ecs/
+          - !Ref ServiceName
+      RetentionInDays: 7
+
+  ECRRepository:
+    Type: "AWS::ECR::Repository"
+    DeletionPolicy: Delete
+    Properties:
+      RepositoryName: !Ref ServiceName
+
+Outputs:
+  LoadBalancer:
+    Value: !GetAtt LoadBalancer.DNSName
