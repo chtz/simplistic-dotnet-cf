@@ -1,5 +1,0 @@
-TODO
-- JSON (structured) logging
-
-DONE
-- Tested in ECS
