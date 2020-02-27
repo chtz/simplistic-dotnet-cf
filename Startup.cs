@@ -12,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Context;
+using System.Data.SqlClient;
 
 namespace TodoApi
 {
@@ -24,24 +25,42 @@ namespace TodoApi
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            string connectionString = Configuration.GetConnectionString("main");
+            Log.Information("Evolve: {Conn}", connectionString); //FIXME don't log password in production
+            try
+            {
+                using (SqlConnection con = new SqlConnection(connectionString))
+                {
+                    var evolve = new Evolve.Evolve(con, msg => Log.Information(msg))
+                    {
+                        Locations = new[] { "db/migrations" },
+                        IsEraseDisabled = true,
+                    };
+
+                    evolve.Migrate();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Database migration failed.", ex);
+                throw;
+            }
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            //app.UseSerilogRequestLogging();
             app.Use(async (context, next) =>
             {
-                using (LogContext.PushProperty("Request", context.Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()), destructureObjects: true)) //overkill ;-)
+                using (LogContext.PushProperty("Request", context.Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()), destructureObjects: true)) //TODO too verbose ;-)
                 {
                     await next.Invoke();
                 }
