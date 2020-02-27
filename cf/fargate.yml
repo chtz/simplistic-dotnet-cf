@@ -20,6 +20,10 @@ Parameters:
     AllowedPattern: "[a-z0-9]+"
     Default: myimage
 
+  ConnectionStringSecretArn:
+    Type: String
+    Default: "arn:aws:secretsmanager:eu-central-1:028619293920:secret:ConnectionStringSecret-yry6qpdYpfOH-Zky4ZX" #FIXME hardcoded
+
 Resources:
   LoadBalancer:
     Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
@@ -86,6 +90,16 @@ Resources:
         - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
       MaxSessionDuration: 3600
       Path: /service-role/
+      Policies:
+        - PolicyName: "Secrets"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                Resource:
+                  - !Ref ConnectionStringSecretArn
 
   FargateCluster:
     Type: "AWS::ECS::Cluster"
@@ -155,6 +169,9 @@ Resources:
           PortMappings:
             - ContainerPort: 80
               Protocol: tcp
+          Secrets:
+            - Name: ASPNETCORE_ConnectionStrings__main
+              ValueFrom: !Ref ConnectionStringSecretArn
       Cpu: "1024"
       ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
       Family: !Ref ServiceName
