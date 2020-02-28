@@ -43,19 +43,26 @@ Docker:
 
 AWS:
 
-    #export AWS_PROFILE=admin-hslu
+    # e.g. export AWS_PROFILE=admin-hslu
 
+    # Create docker image repository (ECR)
     ./create_stack_ecr.sh
+    
+    # Create ALB, ECS cluster & task definition & service (desired count=0), RDS instance and Security Groups (in default VPC) 
     ./create_stack_application.sh
 
+    # Build .NET service and docker image, push image to ECR
     ./ecr_dockerlogin.sh
     ./docker_build.sh
     ./ecr_dockerpush.sh 
 
+    # Set desired count to 1 (~deploy dockerized .NET service)
     ./update_stack_application.sh
 
+    # Send HTTP request to service (see also CloudWatch logs for .NET service log output: RDS query results)
     ./curl_stack_application.sh
 
+    # Delete all AWS resources (to keep the AWS bill low)
     ./delete_stack_application.sh 
     ./delete_stack_ecr.sh
 
