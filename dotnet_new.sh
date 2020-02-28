@@ -1,3 +1,3 @@
 #!/bin/bash
-dotnet new webapi -o TodoApi
 
+dotnet new webapi -o TodoApi

@@ -7,6 +7,13 @@ Parameters:
   Subnets:
     Type: "List<AWS::EC2::Subnet::Id>"
 
+  ServiceName:
+    Type: String
+    AllowedPattern: "[a-z0-9]+"
+
+  ECRRepositoryName:
+    Type: String
+
   DockerImageTag:
     Type: String
     Default: latest
@@ -14,15 +21,6 @@ Parameters:
   DesiredCount:
     Type: Number    
     Default: 0
-
-  ServiceName:
-    Type: String
-    AllowedPattern: "[a-z0-9]+"
-    Default: myimage
-
-  ConnectionStringSecretArn:
-    Type: String
-    Default: "arn:aws:secretsmanager:eu-central-1:028619293920:secret:ConnectionStringSecret-yry6qpdYpfOH-Zky4ZX" #FIXME hardcoded
 
 Resources:
   LoadBalancer:
@@ -91,7 +89,7 @@ Resources:
       MaxSessionDuration: 3600
       Path: /service-role/
       Policies:
-        - PolicyName: "Secrets"
+        - PolicyName: "GetSecrets"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -99,7 +97,7 @@ Resources:
                 Action:
                   - "secretsmanager:GetSecretValue"
                 Resource:
-                  - !Ref ConnectionStringSecretArn
+                  - !Ref DatabaseConnectionStringSecret
 
   FargateCluster:
     Type: "AWS::ECS::Cluster"
@@ -134,7 +132,7 @@ Resources:
   FargateSecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
-      GroupDescription: HTTP 8080
+      GroupDescription: HTTP 80
       SecurityGroupIngress:
         - FromPort: 80
           IpProtocol: tcp
@@ -154,7 +152,7 @@ Resources:
               - .dkr.ecr.
               - Ref: "AWS::Region"
               - .amazonaws.com/
-              - !Ref ECRRepository
+              - !Ref ECRRepositoryName
               - ":"
               - !Ref DockerImageTag
           LogConfiguration:
@@ -171,7 +169,7 @@ Resources:
               Protocol: tcp
           Secrets:
             - Name: ASPNETCORE_ConnectionStrings__main
-              ValueFrom: !Ref ConnectionStringSecretArn
+              ValueFrom: !Ref DatabaseConnectionStringSecret
       Cpu: "1024"
       ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
       Family: !Ref ServiceName
@@ -189,11 +187,59 @@ Resources:
           - !Ref ServiceName
       RetentionInDays: 7
 
-  ECRRepository:
-    Type: "AWS::ECR::Repository"
-    DeletionPolicy: Delete
+  DatabaseSecret:
+    Type: "AWS::SecretsManager::Secret"
     Properties:
-      RepositoryName: !Ref ServiceName
+      Description: 'Secret for RDS instance'
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "admin"}'
+        GenerateStringKey: 'password'
+        PasswordLength: 16
+        ExcludeCharacters: '"@/\'
+
+  DatabaseConnectionStringSecret:
+    Type: "AWS::SecretsManager::Secret"
+    Properties:
+      SecretString: !Join ['', ['Server=', !GetAtt Database.Endpoint.Address, ';Database=tempdb;User Id=', '{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}', ";Password='", '{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}', "'" ]]
+    
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: 20
+      DBInstanceClass: db.t2.small
+      Engine: sqlserver-web
+      EngineVersion: 14.00.3223.3.v1
+      LicenseModel: license-included
+      MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
+      MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
+      BackupRetentionPeriod: 0
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups: 
+        - !Ref DatabaseSG
+
+  DBSubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupDescription: db subnet group
+      SubnetIds: !Ref Subnets
+
+  DatabaseSG:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: SQLServer
+      SecurityGroupIngress:
+        - FromPort: 1433
+          IpProtocol: tcp
+          SourceSecurityGroupId: !GetAtt FargateSecurityGroup.GroupId
+          ToPort: 1433
+      VpcId: !Ref VPC
+
+  SecretRDSInstanceAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref DatabaseSecret
+      TargetId: !Ref Database
+      TargetType: AWS::RDS::DBInstance
 
 Outputs:
   LoadBalancer:

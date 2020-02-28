@@ -1,3 +1,3 @@
 #!/bin/bash
-docker run -it --rm --entrypoint bash myimage
 
+docker run -it --rm --entrypoint bash myimage

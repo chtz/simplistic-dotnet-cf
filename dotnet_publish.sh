@@ -1,3 +1,3 @@
 #!/bin/bash
-dotnet publish -c Release
 
+dotnet publish -c Release

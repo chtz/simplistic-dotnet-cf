@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  ECRRepositoryName:
+    Type: String
+    AllowedPattern: "[a-z0-9]+"
+
+Resources:
+  ECRRepository:
+    Type: "AWS::ECR::Repository"
+    DeletionPolicy: Delete
+    Properties:
+      RepositoryName: !Ref ECRRepositoryName
+
+Outputs:
+  ECRRepositoryName:
+    Value: !Ref ECRRepository

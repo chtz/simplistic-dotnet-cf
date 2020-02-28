@@ -1,3 +1,3 @@
 #!/bin/bash
-docker build -t myimage -f Dockerfile .
 
+docker build -t myimage -f Dockerfile .
