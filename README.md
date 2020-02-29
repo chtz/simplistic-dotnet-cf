@@ -43,13 +43,17 @@ Docker:
 
 AWS:
 
-    # e.g. export AWS_PROFILE=admin-hslu
+    # Ensure you are targeting the correct AWS account
+    export AWS_PROFILE=<your-aws-cli-profile>
 
     # Create docker image repository (ECR)
     ./create_stack_ecr.sh
     
     # Create ALB, ECS cluster & task definition & service (desired count=0), RDS instance and Security Groups (in default VPC) 
     ./create_stack_application.sh
+
+    # Subscribe to error log alerts
+    ./topic_subscribe.sh <your-email>
 
     # Build .NET service and docker image, push image to ECR
     ./ecr_dockerlogin.sh

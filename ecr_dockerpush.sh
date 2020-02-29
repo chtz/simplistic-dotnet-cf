@@ -1,7 +1,7 @@
 #!/bin/bash
 
-SERVICE=${1:-weatherforecast}
-DOCKER_TAG=${2:-latest}
+DOCKER_TAG=${1:-latest}
+SERVICE=${2:-weatherforecast}
 
 REPO_URI=$(aws ecr describe-repositories --repository-name $SERVICE --query "repositories[].repositoryUri" --output text)
 

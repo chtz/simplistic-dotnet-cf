@@ -187,6 +187,37 @@ Resources:
           - !Ref ServiceName
       RetentionInDays: 7
 
+  ErrorCountMetricFilter: 
+    Type: AWS::Logs::MetricFilter
+    Properties: 
+      LogGroupName: !Ref TaskLogGroup
+      FilterPattern: '{ $.Level = "Error"  || $.Level = "Fatal" }'
+      MetricTransformations: 
+        - MetricValue: "1"
+          MetricNamespace: !Ref ServiceName
+          MetricName: "ErrorCount"
+          DefaultValue: 0
+
+  ErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties: 
+      AlarmDescription: 'Errors in log'
+      AlarmActions:
+        - !Ref AlarmTopic
+      Namespace: !Ref ServiceName
+      MetricName: "ErrorCount"
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      TreatMissingData: ignore
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: !Sub "${ServiceName} Error"
+
   DatabaseSecret:
     Type: "AWS::SecretsManager::Secret"
     Properties:
@@ -244,3 +275,6 @@ Resources:
 Outputs:
   LoadBalancer:
     Value: !GetAtt LoadBalancer.DNSName
+
+  AlarmTopicArn:
+    Value: !Ref AlarmTopic

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-SERVICE=${1:-weatherforecast}
-DOCKER_TAG=${2:-latest}
+DOCKER_TAG=${1:-latest}
+SERVICE=${2:-weatherforecast}
 
 aws cloudformation update-stack --stack-name $SERVICE-application --template-body file://./cf/application.yaml \
     --capabilities CAPABILITY_IAM \

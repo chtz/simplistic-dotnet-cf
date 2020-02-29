@@ -8,7 +8,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
-using Serilog.Formatting.Compact;
+//using Serilog.Formatting.Compact;
+using Serilog.Formatting.Json;
 
 namespace TodoApi
 {
@@ -19,7 +20,8 @@ namespace TodoApi
             Log.Logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-                .WriteTo.Console(new RenderedCompactJsonFormatter())
+                //.WriteTo.Console(new RenderedCompactJsonFormatter())
+                .WriteTo.Console(new JsonFormatter())
                 .CreateLogger();
         
             try

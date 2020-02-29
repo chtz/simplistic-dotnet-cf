@@ -30,13 +30,15 @@ namespace TodoApi.Controllers
         [HttpGet]
         public IEnumerable<WeatherForecast> Get()
         {
-            _logger.LogInformation("Getting WeatherForecast at {MyRequestTime}", DateTime.Now);
+            _logger.LogInformation("Getting WeatherForecast at {MyRequestTime}", DateTime.Now); // no "@l" (compact) // "Level":"Information" (non-compact)
+            //_logger.LogError("Sample error"); //"@l":"Error" // "Level":"Error" (non-compact)
+            //_logger.LogCritical("Sample critical"); //"@l":"Fatal" // "Level":"Fatal" (non-compact)
 
             string connectionString = _configuration.GetConnectionString("main");
             using (SqlConnection con = new SqlConnection(connectionString))
             {
-                con.Open();
-                using (SqlCommand command = new SqlCommand("SELECT id from Foo", con))
+                con.Open(); //if MS SQL is down -> ... "@l":"Error","@x":"System.Data.SqlClient.SqlException (0x80131904): A network-related ...
+                using (SqlCommand command = new SqlCommand("SELECT id from Foo", con)) //if schema is invalid (e.g. table missing) -> ... "@l":"Error","@x":"System.Data.SqlClient.SqlException (0x80131904): Invalid object name ...
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
                     while (reader.Read())

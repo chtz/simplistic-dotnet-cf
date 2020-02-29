@@ -50,7 +50,7 @@ namespace TodoApi
             catch (Exception ex)
             {
                 Log.Error("Database migration failed.", ex);
-                throw;
+                throw; // if MS SQL is down -> ... "@m":"Application start-up failed","@i":"f8803f6f","@l":"Fatal","@x":"Evolve.EvolveException: Validation of the database connection failed. ...
             }
 
             if (env.IsDevelopment())
