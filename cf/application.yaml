@@ -278,3 +278,6 @@ Outputs:
 
   AlarmTopicArn:
     Value: !Ref AlarmTopic
+
+  LogGroup:
+    Value: !Ref TaskLogGroup

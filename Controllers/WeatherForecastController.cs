@@ -28,11 +28,15 @@ namespace TodoApi.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<WeatherForecast> Get()
+        public IEnumerable<WeatherForecast> Get(string err = null)
         {
             _logger.LogInformation("Getting WeatherForecast at {MyRequestTime}", DateTime.Now); // no "@l" (compact) // "Level":"Information" (non-compact)
-            //_logger.LogError("Sample error"); //"@l":"Error" // "Level":"Error" (non-compact)
-            //_logger.LogCritical("Sample critical"); //"@l":"Fatal" // "Level":"Fatal" (non-compact)
+
+            if (err != null) 
+            {
+                _logger.LogError("Sample error"); //"@l":"Error" // "Level":"Error" (non-compact)
+                _logger.LogCritical("Sample critical"); //"@l":"Fatal" // "Level":"Fatal" (non-compact)
+            }
 
             string connectionString = _configuration.GetConnectionString("main");
             using (SqlConnection con = new SqlConnection(connectionString))
