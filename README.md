@@ -25,7 +25,7 @@
 - Linux-like OS (e.g. macOS)
 - AWS CLI v2 installed and configured (e.g. aws configure sso)
 - Docker installed
-- Tools for everyday use installed: bash, sed, curl, jq
+- Tools for everyday use installed: bash, sed, curl, jq, ruby
 - Optional: Visual Studio Code and .NET Core plugins installed
 
 ## Steps
@@ -80,6 +80,9 @@ Run app in AWS:
 
     # Send HTTP request to service (see also CloudWatch logs for .NET service log output: RDS query results)
     ./curl_stack_application.sh
+
+    # Show recent info logs (somewhat delayed)
+    ./logs_stack_application.sh
 
     # Don't forget to delete all AWS resources after testing (to keep the AWS bill low)
     ./delete_stack_application.sh 

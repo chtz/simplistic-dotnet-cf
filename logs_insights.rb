@@ -1,5 +1,7 @@
 #!/usr/bin/ruby
 
+#FIXME proper escaping and error handling (this is not ready for production!)
+
 def now
     Time.now.utc
 end
@@ -12,15 +14,15 @@ def epoc(t)
     t.to_i
 end
 
-period_hours = ARGV[0].nil? ? (24 * 365) : ARGV[0].to_f
+period_hours = ARGV[0].to_f
 end_time = now
 start_time = end_time - hours(period_hours)
 STDERR.puts "From: #{start_time} to: #{end_time}"
 
-log_group = ARGV[1].nil? ? "/aws/events/all" : ARGV[1]
+log_group = ARGV[1]
 STDERR.puts "Group: #{log_group}"
 
-query = ARGV[2].nil? ? "fields @timestamp, @message | sort @timestamp desc | limit 20" : ARGV[2]
+query = ARGV[2]
 STDERR.puts "Query: #{query}"
 
 command = "aws logs start-query --log-group-name '#{log_group}' --start-time #{epoc(start_time)} --end-time #{epoc(end_time)} --query-string \"#{query}\" --query 'queryId' --output text"
@@ -39,6 +41,3 @@ end
 command3 = "aws logs get-query-results --query-id #{query_id} --query 'results[*][?field == `@message`].value' --output text"
 STDERR.puts "Command: #{command3}"
 puts `#{command3}`
-
-#Samples
-#./logs_insights.rb | jq '.["detail-type"]'
