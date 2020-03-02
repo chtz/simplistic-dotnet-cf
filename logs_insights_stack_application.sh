@@ -11,5 +11,5 @@ QUERY="fields @timestamp, @message | sort @timestamp asc | filter $LEVEL_FILTER"
 ./logs_insights.rb $PERIOD_HOURS "$LOG_GROUP" "$QUERY"
 
 #Samples:
-#./logs_stack_application.sh 1 "Level=='Error'" | jq
-#./logs_stack_application.sh 2 "\\\`Properties.Request.User-Agent\\\` !== 'ELB-HealthChecker/2.0'" | jq -r '"\(.Timestamp) \(.Properties.Request["X-Amzn-Trace-Id"]) \(.MessageTemplate), Id=\(.Properties.Id)"'
+#./logs_insights_stack_application.sh 1 "Level=='Error'" | jq
+#./logs_insights_stack_application.sh 2 "\\\`Properties.Request.User-Agent\\\` !== 'ELB-HealthChecker/2.0'" | jq -r '"\(.Timestamp) \(.Properties.Request["X-Amzn-Trace-Id"]) \(.MessageTemplate), Id=\(.Properties.Id)"'
