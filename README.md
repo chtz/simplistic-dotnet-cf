@@ -18,6 +18,7 @@
 - CloudWatch Logs Metric Filters: Convert error log patterns to CloudWatch error metrics
 - CloudWatch Alarms: Alarm based on the occurrence of errors in the logs
 - Simple Notification Service: Send error alerts to email subscribers 
+- Amazon Simple Queue Service: Receive SQS messages via AWS SDK for .NET
 
 ## Preconditions
 
