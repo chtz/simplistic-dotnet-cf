@@ -93,3 +93,8 @@ Run app in AWS:
     ./delete_stack_ecr.sh
 
 Enjoy!
+
+# TODOs
+
+- CloudFormation: SQS & Task Role
+- Local workflow: setup SQS queue for VS Code run and docker run
