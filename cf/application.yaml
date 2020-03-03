@@ -99,6 +99,37 @@ Resources:
                 Resource:
                   - !Ref DatabaseConnectionStringSecret
 
+  TaskRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      MaxSessionDuration: 3600
+      Path: /service-role/
+      Policies:
+        - PolicyName: "SQS" 
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "sqs:ReceiveMessage"
+                  - "sqs:DeleteMessage"
+                Resource:
+                  - !GetAtt Queue.Arn
+
+  Queue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      ReceiveMessageWaitTimeSeconds: 20
+
   FargateCluster:
     Type: "AWS::ECS::Cluster"
     Properties:
@@ -170,8 +201,12 @@ Resources:
           Secrets:
             - Name: ASPNETCORE_ConnectionStrings__main
               ValueFrom: !Ref DatabaseConnectionStringSecret
+          Environment:
+            - Name: ASPNETCORE_queues__main
+              Value: !Ref Queue
       Cpu: "1024"
       ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
       Family: !Ref ServiceName
       Memory: "2048"
       NetworkMode: awsvpc
@@ -211,7 +246,7 @@ Resources:
       EvaluationPeriods: 1
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
-      TreatMissingData: ignore
+      TreatMissingData: notBreaching
 
   AlarmTopic:
     Type: AWS::SNS::Topic
@@ -278,6 +313,9 @@ Outputs:
 
   AlarmTopicArn:
     Value: !Ref AlarmTopic
+
+  Queue:
+    Value: !Ref Queue
 
   LogGroup:
     Value: !Ref TaskLogGroup
