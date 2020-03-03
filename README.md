@@ -34,7 +34,7 @@
 
 General tip (and disclaimer): Study all scripts (bash, ruby) and sources (C#) before you execute them. Basically they should work if all tools are installed and configured (see preconditions). 
 
-Note, however, that the scripts (and abviously the app) are not intended for productive use (learning examples, e.g. the scripts do not include error handling).
+Note, however, that the scripts (and obviously the app) are not intended for productive use (learning examples, e.g. the scripts do not include error handling).
 
 Preperation:
 
