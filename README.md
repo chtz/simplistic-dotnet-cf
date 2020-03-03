@@ -22,7 +22,7 @@
 
 ## Preconditions
 
-- AWS Account and default VPC
+- AWS Account and default VPC (tested in eu-central-1)
 - Linux-like OS (e.g. macOS - tested with Catalina)
 - AWS CLI (v2) installed and profile configured (~admin permissions)
 - Docker installed and running (e.g. Docker Desktop)
@@ -44,8 +44,8 @@ Preperation:
     # Create SQS queue and update config in appsettings.Development.json (to run app in VS Code) and environment config in docker_run_app.sh (to run app with docker)
     ./create_sqs_queue_for_vscode_and_docker.sh
 
-    # Manual step (if you don't want to use the AWS CLI default profile)
-    # vi appsettings.Development.json ... and update AWS profile (TODO automation ;-)
+    # Update AWS profile in appsettings.Development.json
+    ./update_vs_settings.sh 
 
 Run app in Visual Studio Code:
 
