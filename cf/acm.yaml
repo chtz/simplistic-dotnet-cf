@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Host:
+    Type: String
+    Default: "www"
+
+  Domain:
+    Type: String
+    Default: "zuehlke.p.iraten.ch"
+
+  HostedZoneId:
+    Type: String
+    Default: "Z2V1EOIGCXC0ZI"
+
+Resources:
+  SSLCert:
+    Type: "AWS::CertificateManager::Certificate"
+    Properties:
+      DomainName: !Sub "${Host}.${Domain}"
+      DomainValidationOptions:
+        - DomainName: !Sub "${Host}.${Domain}"
+          ValidationDomain: !Ref Domain
+      ValidationMethod: DNS 
+    DependsOn: ValidationTriggerRule
+
+  ValidationTriggerRule:
+    Type: "AWS::Events::Rule"
+    Properties: 
+      EventPattern:
+        source:
+          - "aws.acm"
+        detail-type:
+          - "AWS API Call via CloudTrail"
+        detail:
+          eventSource:
+            - "acm.amazonaws.com"
+          eventName:
+            - "RequestCertificate"
+      #RoleArn: FIXME
+      Targets: 
+        - Arn: !GetAtt ValidationLambda.Arn
+          Id: ValidationLambda
+          #RoleArn: FIXME
+
+  ValidationLambda:
+    Type: AWS::Lambda::Function
+    Properties: 
+      Environment:
+        Variables: 
+          hostedZoneId: !Ref HostedZoneId
+      Handler: index.handler
+      Role: !GetAtt ValidationLambdaRole.Arn
+      Runtime: nodejs10.x
+      Timeout: 5
+      Code:
+        ZipFile: |
+            var AWS = require('aws-sdk');
+            var acm = new AWS.ACM();
+            var route53 = new AWS.Route53();
+            
+            exports.handler = async (event) => {
+                console.log(JSON.stringify(event));
+                
+                var certArn = event.detail.responseElements.certificateArn
+                var cert = await acm.describeCertificate({
+                  CertificateArn: certArn
+                }).promise();
+                
+                console.log(JSON.stringify(cert));
+                
+                var dnsName = cert.Certificate.DomainValidationOptions[0].ResourceRecord.Name;
+                var dnsValue = cert.Certificate.DomainValidationOptions[0].ResourceRecord.Value;
+                var dnsType = cert.Certificate.DomainValidationOptions[0].ResourceRecord.Type;
+                await route53.changeResourceRecordSets({
+                  ChangeBatch: {
+                    Changes: [
+                      {
+                        Action: "UPSERT",
+                        ResourceRecordSet: {
+                          Name: dnsName,
+                          ResourceRecords: [
+                            {
+                              Value: dnsValue
+                            }
+                          ],
+                          TTL: 60,
+                          Type: dnsType
+                        }
+                      }
+                    ],
+                    Comment: "Automated cert validation"
+                  },
+                  HostedZoneId: process.env.hostedZoneId
+                }).promise();
+                
+                return "done";
+            };
+
+  ValidationLambdaRole: 
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      MaxSessionDuration: 3600
+      #Path: /service-role/
+      Policies:
+        - PolicyName: "LogsRoute53AndACM" 
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                  - "acm:DescribeCertificate"
+                  - "route53:ChangeResourceRecordSets"
+                Resource:
+                  - "*"
+
+Outputs:
+  SSLCert:
+    Value: !Ref SSLCert
