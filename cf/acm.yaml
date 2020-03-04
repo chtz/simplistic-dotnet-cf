@@ -118,7 +118,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "logs:CreateLogGroup
+                  - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                   - "acm:DescribeCertificate"
