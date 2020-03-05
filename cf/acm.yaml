@@ -51,7 +51,7 @@ Resources:
           hostedZoneId: !Ref HostedZoneId
       Handler: index.handler
       Role: !GetAtt ValidationLambdaRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Timeout: 5
       Code:
         ZipFile: |
@@ -110,7 +110,6 @@ Resources:
             Action:
               - "sts:AssumeRole"
       MaxSessionDuration: 3600
-      #Path: /service-role/
       Policies:
         - PolicyName: "LogsRoute53AndACM" 
           PolicyDocument:
@@ -125,6 +124,16 @@ Resources:
                   - "route53:ChangeResourceRecordSets"
                 Resource:
                   - "*"
+
+  LambdaInvokePermission: 
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      #FunctionName: !GetAtt ValidationLambda.Arn
+      FunctionName: !Ref ValidationLambda
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      #SourceAccount: !Ref "AWS::AccountId"
+      SourceArn: !GetAtt ValidationTriggerRule.Arn
 
 Outputs:
   SSLCert:

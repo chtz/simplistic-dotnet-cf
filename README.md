@@ -24,7 +24,7 @@
 
 - AWS Account and default VPC (tested in eu-central-1)
 - Linux-like OS (e.g. macOS - tested with Catalina)
-- AWS CLI (v2) installed and profile configured (~admin permissions)
+- AWS CLI (v2 or the most recent v1) installed and profile configured (~admin permissions)
 - Docker installed and running (e.g. Docker Desktop)
 - Tools for everyday use installed (used in scripts): bash, sed, awk, curl, jq, ruby, uuidgen
 - awslogs installed (pip3 install awslogs)
