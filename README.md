@@ -19,12 +19,14 @@
 - CloudWatch Alarms: Alarm based on the occurrence of errors in the logs
 - Simple Notification Service: Used to send error alerts to email subscribers 
 - Amazon Simple Queue Service: Process SQS messages via AWS SDK for .NET
+- Route53: Managed DNS
+- AWS Certificate Manager: Managed TLS certs
 
 ## Preconditions
 
 - AWS Account and default VPC (tested in eu-central-1)
 - Linux-like OS (e.g. macOS - tested with Catalina)
-- AWS CLI (v2) installed and profile configured (~admin permissions)
+- AWS CLI (v2 or the most recent v1) installed and profile configured (~admin permissions)
 - Docker installed and running (e.g. Docker Desktop)
 - Tools for everyday use installed (used in scripts): bash, sed, awk, curl, jq, ruby, uuidgen
 - awslogs installed (pip3 install awslogs)
@@ -77,6 +79,14 @@ Run app with docker:
     ./curl_app.sh
 
 Run app in AWS:
+
+    # Optional (1/3): Create Route53 hosted zone and deploy ACM certificate auto-validation lambda
+    ./create_stack_autovalidating_hostedzone.sh <your DNS domain>
+
+    # Optional (2/3): Manual step: update your domain name registrar's configuration (NS servers output from previous step)
+
+    # Optional (3/3): Create wildcard SSL certificate (*.<your DNS domain>)
+    ./create_stack_acm.sh
 
     # Create private docker image repository (ECR)
     ./create_stack_ecr.sh
