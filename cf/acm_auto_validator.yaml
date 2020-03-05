@@ -1,29 +1,10 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
 Parameters:
-  Host:
-    Type: String
-    Default: "www"
-
-  Domain:
-    Type: String
-    Default: "zuehlke.p.iraten.ch"
-
   HostedZoneId:
     Type: String
-    Default: "Z2V1EOIGCXC0ZI"
 
 Resources:
-  SSLCert:
-    Type: "AWS::CertificateManager::Certificate"
-    Properties:
-      DomainName: !Sub "${Host}.${Domain}"
-      DomainValidationOptions:
-        - DomainName: !Sub "${Host}.${Domain}"
-          ValidationDomain: !Ref Domain
-      ValidationMethod: DNS 
-    DependsOn: ValidationTriggerRule
-
   ValidationTriggerRule:
     Type: "AWS::Events::Rule"
     Properties: 
@@ -37,11 +18,9 @@ Resources:
             - "acm.amazonaws.com"
           eventName:
             - "RequestCertificate"
-      #RoleArn: FIXME
       Targets: 
         - Arn: !GetAtt ValidationLambda.Arn
           Id: ValidationLambda
-          #RoleArn: FIXME
 
   ValidationLambda:
     Type: AWS::Lambda::Function
@@ -116,25 +95,19 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action:
+                Action: 
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                   - "acm:DescribeCertificate"
                   - "route53:ChangeResourceRecordSets"
-                Resource:
+                Resource: #FIXME least privilege
                   - "*"
 
   LambdaInvokePermission: 
     Type: "AWS::Lambda::Permission"
     Properties:
-      #FunctionName: !GetAtt ValidationLambda.Arn
       FunctionName: !Ref ValidationLambda
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
-      #SourceAccount: !Ref "AWS::AccountId"
       SourceArn: !GetAtt ValidationTriggerRule.Arn
-
-Outputs:
-  SSLCert:
-    Value: !Ref SSLCert
