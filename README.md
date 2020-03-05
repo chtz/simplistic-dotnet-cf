@@ -47,6 +47,9 @@ Preperation:
     # Update AWS profile in appsettings.Development.json
     ./update_vs_settings.sh 
 
+    # Optional (show git branch in bash prompt)
+    . ./mac_git_branch_ps1.sh
+
 Run app in Visual Studio Code:
 
     # Start DB
