@@ -19,6 +19,8 @@
 - CloudWatch Alarms: Alarm based on the occurrence of errors in the logs
 - Simple Notification Service: Used to send error alerts to email subscribers 
 - Amazon Simple Queue Service: Process SQS messages via AWS SDK for .NET
+- Route53: Managed DNS
+- AWS Certificate Manager: Managed TLS certs
 
 ## Preconditions
 
