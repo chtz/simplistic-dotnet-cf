@@ -1,10 +1,15 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
 Parameters:
-  HostedZoneId:
+  Domain:
     Type: String
 
 Resources:
+  HostedZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      Name: !Ref Domain
+
   ValidationTriggerRule:
     Type: "AWS::Events::Rule"
     Properties: 
@@ -27,7 +32,7 @@ Resources:
     Properties: 
       Environment:
         Variables: 
-          hostedZoneId: !Ref HostedZoneId
+          hostedZoneId: !Ref HostedZone
       Handler: index.handler
       Role: !GetAtt ValidationLambdaRole.Arn
       Runtime: nodejs12.x
@@ -111,3 +116,17 @@ Resources:
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt ValidationTriggerRule.Arn
+
+Outputs:
+  Domain:
+    Value: !Ref Domain
+    Export:
+      Name: Domain
+
+  HostedZoneId:
+    Value: !Ref HostedZone
+    Export:
+      Name: HostedZoneId
+
+  NameServers:
+    Value: !Join [ ",", !GetAtt HostedZone.NameServers ]

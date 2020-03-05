@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Host:
+    Type: String
+    Default: "*"
+
+Resources:
+  WildcardSSLCert:
+    Type: "AWS::CertificateManager::Certificate"
+    Properties:
+      DomainName: !Join
+        - ''
+        - - !Ref Host
+          - "."
+          - !ImportValue Domain 
+      DomainValidationOptions:
+        - DomainName: !Join
+            - ''
+            - - !Ref Host
+              - "."
+              - !ImportValue Domain 
+          ValidationDomain: !ImportValue Domain 
+      ValidationMethod: DNS 
+
+Outputs:
+  WildcardSSLCert:
+    Value: !Ref WildcardSSLCert
+    Export:
+      Name: SSLCert
