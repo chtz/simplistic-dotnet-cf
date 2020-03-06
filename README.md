@@ -22,6 +22,7 @@
 - Route53: Managed DNS
 - AWS Certificate Manager: Managed TLS cert for ALB, ALB integration
 - Cognito: User Pool, hosted login/signup UI, ALB integration
+- Cloud Watch Events Rule and Lambda: Used to auto-validate ACM certificates
 
 ## Preconditions
 
