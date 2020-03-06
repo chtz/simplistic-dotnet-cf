@@ -2,26 +2,26 @@
 
 ## What is this?
 
-- Focus ("everything else are side dishes"): An AWS CloudFormation template that allows you to run a dockerized Hello World application in ECS Fargate (see cf/ecr.yaml and cf/application.yaml)
-- Sample workload: A simple Hello World AspNetCore app (one of my first .NET Core applications, btw.) that talks to MS SQL Server (and SQS) and logs in "CloudWatch Logs Insights-friendly" JSON
-- A few (bash-) scripts so that you do not have to leave the console
+- Focus ("everything else are side dishes"): An AWS CloudFormation template that allows you to run a dockerized ASP.NET core application in ECS Fargate with a MS SQL Server RDS backend and a (hosted) Cognito Login Page (see cf/*.yaml)
+- Sample workload: A simple ASP.NET Core hello world app that talks to MS SQL Server and logs in "CloudWatch Logs Insights-friendly" JSON
+- A couple of (bash-) scripts so that you do not have to leave the console
 
 ## AWS stuff covered
 
 - CloudFormation: Infrastructure-as-Code
-- Application Load Balancer: Managed HTTP(S) reverse proxy
+- Application Load Balancer (ALB): Managed HTTP reverse proxy with SSL termination
 - AWS Fargate: Serverless compute for containers
-- AWS Secrets Manager: Secure storage of RDS credentials and connection strings
+- AWS Secrets Manager: Secure storage (e.g. for RDS credentials and connection strings with embedded secrets)
 - Amazon ECR: Managed private docker registry
-- Amazon RDS for SQL server: Managed SQL server
+- Amazon RDS for SQL server: Managed MS SQL Server
 - CloudWatch Logs: Managed Logging solution
-- CloudWatch Logs Metric Filters: Convert error log patterns to CloudWatch error metrics
+- CloudWatch Logs Metric Filters: Used to convert error-logs to CloudWatch error metrics
 - CloudWatch Alarms: Alarm based on the occurrence of errors in the logs
 - Simple Notification Service: Used to send error alerts to email subscribers 
 - Amazon Simple Queue Service: Process SQS messages via AWS SDK for .NET
 - Route53: Managed DNS
-- AWS Certificate Manager: Managed TLS certs
-- Cognito: Managed login UI et al
+- AWS Certificate Manager: Managed TLS cert for ALB, ALB integration
+- Cognito: User Pool, hosted login/signup UI, ALB integration
 
 ## Preconditions
 
