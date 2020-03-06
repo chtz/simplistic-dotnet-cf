@@ -6,6 +6,10 @@
 - Sample workload: A simple ASP.NET Core hello world app that talks to MS SQL Server and logs in "CloudWatch Logs Insights-friendly" JSON
 - A couple of (bash-) scripts so that you do not have to leave the console
 
+## Overview
+
+![Overview](diagram/simplistic-dotnet-cf-v1.png)
+
 ## AWS stuff covered
 
 - CloudFormation: Infrastructure-as-Code
