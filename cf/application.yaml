@@ -26,6 +26,10 @@ Parameters:
     Type: String
     Default: "www"
 
+  UserPoolDomainName:
+    Type: String
+    Default: "www-dev-zuehlke-p-iraten-ch"
+
 Resources:
   LoadBalancer:
     Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
@@ -50,13 +54,66 @@ Resources:
           ToPort: 443
       VpcId: !Ref VPC
 
+  UserPool:
+    Type: "AWS::Cognito::UserPool"
+    Properties:
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: False
+        UnusedAccountValidityDays: 365
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+
+  UserPoolClient:
+    Type: "AWS::Cognito::UserPoolClient"
+    Properties:            
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthFlowsUserPoolClient: True
+      AllowedOAuthScopes:
+        - openid
+      CallbackURLs:
+        #- !Sub "https://${CallbackCNAME}/oauth2/idpresponse"
+        - !Join
+          - ''
+          - - "https://"
+            - !Ref Host
+            - '.'
+            - !ImportValue Domain
+            - "/oauth2/idpresponse"
+      DefaultRedirectURI: !Join
+        - ''
+        - - "https://"
+          - !Ref Host
+          - '.'
+          - !ImportValue Domain
+          - "/oauth2/idpresponse"
+      GenerateSecret: True
+      SupportedIdentityProviders:
+        - COGNITO
+      UserPoolId: !Ref UserPool
+
+  UserPoolDomain:
+    Type: "AWS::Cognito::UserPoolDomain"
+    Properties:
+      Domain: !Ref UserPoolDomainName
+      UserPoolId: !Ref UserPool
+
   Listener:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
       Certificates:
         - CertificateArn: !ImportValue SSLCert
       DefaultActions:
-        - TargetGroupArn: !Ref TargetGroup
+        - Order: 1
+          AuthenticateCognitoConfig:
+            UserPoolArn: !GetAtt UserPool.Arn
+            UserPoolClientId: !Ref UserPoolClient
+            UserPoolDomain: !Ref UserPoolDomainName
+          Type: authenticate-cognito
+        - Order: 2
+          TargetGroupArn: !Ref TargetGroup
           Type: forward
       LoadBalancerArn: !Ref LoadBalancer
       Port: 443

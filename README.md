@@ -21,6 +21,7 @@
 - Amazon Simple Queue Service: Process SQS messages via AWS SDK for .NET
 - Route53: Managed DNS
 - AWS Certificate Manager: Managed TLS certs
+- Cognito: Managed login UI et al
 
 ## Preconditions
 
