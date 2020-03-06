@@ -83,11 +83,11 @@ Run app with docker:
 Run app in AWS:
 
     # Create Route53 hosted zone and deploy ACM certificate auto-validation lambda
-    ./create_stack_autovalidating_hostedzone.sh <your DNS domain>
+    ./create_stack_autovalidating_hostedzone.sh <your new DNS domain>
 
     # Manual step: update your domain name registrar's configuration (NS servers output from previous step)
 
-    # Create wildcard SSL certificate (*.<your DNS domain>)
+    # Create wildcard SSL certificate (*.<your new DNS domain>)
     ./create_stack_acm.sh
 
     # Create private docker image repository (ECR)
