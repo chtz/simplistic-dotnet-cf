@@ -39,7 +39,7 @@ General tip (and disclaimer): Study all scripts (bash, ruby) and sources (C#) be
 
 Note, however, that the scripts (and obviously the app) are not intended for productive use (the scripts do not handle errors properly, among others).
 
-Preperation:
+Preparation:
 
     # Ensure you are targeting the correct AWS account
     export AWS_PROFILE=<your-aws-cli-profile>
