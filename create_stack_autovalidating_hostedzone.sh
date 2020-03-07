@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Pre-cond: CloudTrail must be enabled!
-
 DOMAIN=${1?param missing - DNS domain.}
 
 aws cloudformation create-stack --stack-name autovalidating-hostedzone --template-body file://./cf/autovalidating_hostedzone.yaml \
