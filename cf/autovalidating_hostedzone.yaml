@@ -5,6 +5,8 @@ Parameters:
     Type: String
 
 Resources:
+
+  # Activating CloudTrail is always a good thing. But here CloudTrail is needed to trigger a Lambda function after creating new ACM certificates (RequestCertificate API call) via Events Rule.
   Trail:
     Type: "AWS::CloudTrail::Trail"
     Properties:
@@ -78,6 +80,8 @@ Resources:
                 Resource: 
                   - !GetAtt TrailLogs.Arn
 
+  # We will use a Route53 HostedZone to provide our own CNAMEs for the ALB endpoints. In addition, our Lambda function will automatically enter the entries for validation of ACM certificates.
+  # After the Hosted Zone is created, and before you create ACM certificates, you have to update your domain registrar's configuration entries (see: stack outputs)
   HostedZone:
     Type: "AWS::Route53::HostedZone"
     Properties:
@@ -100,6 +104,7 @@ Resources:
         - Arn: !GetAtt ValidationLambda.Arn
           Id: ValidationLambda
 
+  # Create validation records in Route53 for newly requested ACM certificates
   ValidationLambda:
     Type: AWS::Lambda::Function
     Properties: 
