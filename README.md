@@ -26,7 +26,7 @@
 - Route53: Managed DNS
 - AWS Certificate Manager: Managed TLS cert for ALB, ALB integration
 - Cognito: User Pool, hosted login/signup UI, ALB integration
-- Cloud Watch Events Rule and Lambda: Used to auto-validate ACM certificates
+- CloudTrail and Cloud Watch Events Rule and Lambda: Used to auto-validate ACM certificates
 
 ## Preconditions
 
@@ -86,7 +86,7 @@ Run app with docker:
 
 Run app in AWS:
 
-    # Create Route53 hosted zone and deploy ACM certificate auto-validation lambda
+    # Create Route53 hosted zone and deploy ACM certificate auto-validation lambda (activate CloudTrail)
     ./create_stack_autovalidating_hostedzone.sh <your new DNS domain>
 
     # Manual step: update your domain name registrar's configuration (NS servers output from previous step)
