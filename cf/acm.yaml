@@ -5,6 +5,10 @@ Parameters:
     Type: String
     Default: "*"
 
+  CertExportName:
+    Type: String
+    Default: "SSLCert"
+
 Resources:
   WildcardSSLCert:
     Type: "AWS::CertificateManager::Certificate"
@@ -27,4 +31,4 @@ Outputs:
   WildcardSSLCert:
     Value: !Ref WildcardSSLCert
     Export:
-      Name: SSLCert
+      Name: !Ref CertExportName
