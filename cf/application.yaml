@@ -1,11 +1,11 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
 Parameters:
-  VPC:
-    Type: "AWS::EC2::VPC::Id"
+  #VPC:
+  #  Type: "AWS::EC2::VPC::Id"
 
-  Subnets:
-    Type: "List<AWS::EC2::Subnet::Id>"
+  #Subnets:
+  #  Type: "List<AWS::EC2::Subnet::Id>"
 
   ServiceName:
     Type: String
@@ -102,10 +102,11 @@ Resources:
           TargetGroupArn: !ImportValue TargetGroup
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
+          AssignPublicIp: DISABLED
           SecurityGroups:
             - Ref: FargateSecurityGroup
-          Subnets: !Ref Subnets
+          #Subnets: !Ref Subnets
+          Subnets: !Split [",", !ImportValue PrivateSubnets]
       PlatformVersion: LATEST
       SchedulingStrategy: REPLICA
       TaskDefinition: !Ref TaskDefinition
@@ -120,7 +121,8 @@ Resources:
           #SourceSecurityGroupId: !GetAtt LoadBalancerSecurityGroup.GroupId #NLBs cannot have security groups
           CidrIp: "0.0.0.0/0"
           ToPort: 80          
-      VpcId: !Ref VPC
+      #VpcId: !Ref VPC
+      VpcId: !ImportValue VPC
 
   TaskDefinition:
     Type: "AWS::ECS::TaskDefinition"
@@ -238,7 +240,8 @@ Resources:
     Type: "AWS::RDS::DBSubnetGroup"
     Properties:
       DBSubnetGroupDescription: db subnet group
-      SubnetIds: !Ref Subnets
+      #SubnetIds: !Ref Subnets
+      SubnetIds: !Split [",", !ImportValue PrivateSubnets]
 
   DatabaseSG:
     Type: "AWS::EC2::SecurityGroup"
@@ -249,7 +252,8 @@ Resources:
           IpProtocol: tcp
           SourceSecurityGroupId: !GetAtt FargateSecurityGroup.GroupId
           ToPort: 1433
-      VpcId: !Ref VPC
+      #VpcId: !Ref VPC
+      VpcId: !ImportValue VPC
 
   SecretRDSInstanceAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment

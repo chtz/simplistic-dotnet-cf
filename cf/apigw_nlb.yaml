@@ -9,11 +9,11 @@ Parameters:
     Type: String
     Default: "www-dev-zuehlke-p-iraten-ch"
 
-  Subnets:
-    Type: "List<AWS::EC2::Subnet::Id>"
+  #Subnets:
+  #  Type: "List<AWS::EC2::Subnet::Id>"
 
-  VPC:
-    Type: "AWS::EC2::VPC::Id"
+  #VPC:
+  #  Type: "AWS::EC2::VPC::Id"
 
 Resources:
   S3BucketForWebsiteContent:
@@ -23,7 +23,8 @@ Resources:
     Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
     Properties:
       Scheme: internal
-      Subnets: !Ref Subnets
+      #Subnets: !Ref Subnets
+      Subnets: !Split [",", !ImportValue PrivateSubnets]
       Type: network
 
   Listener:
@@ -49,7 +50,8 @@ Resources:
         - Key: deregistration_delay.timeout_seconds
           Value: 60
       TargetType: ip
-      VpcId: !Ref VPC
+      #VpcId: !Ref VPC
+      VpcId: !ImportValue VPC
 
   VPCLink:
     Type: "AWS::ApiGateway::VpcLink"

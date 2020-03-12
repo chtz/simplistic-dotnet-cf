@@ -131,6 +131,15 @@ Enjoy!
 
 ## TODOs
 
-- Move Service to private subnet (otherwise internet users can access the service unauthenticated!!!)
-- Ensure Service != 200's are handled correctly in API
-- Update diagram
+### Ensure Service != 200's are handled correctly in API
+
+### Update diagram
+
+### Fix stack deletion issue
+
+The following resource(s) failed to delete: [LoadBalancer, VPCLink].
+
+Load balancer 'arn:aws:elasticloadbalancing:eu-central-1:028619293920:loadbalancer/net/apigw-LoadB-5IBHWXFVKK2/ecd7931edadecc64' cannot be deleted because it is currently associated with another service (Service: AmazonElasticLoadBalancingV2; Status Code: 400; Error Code: ResourceInUse; Request ID: e29c109c-7ce1-41de-8060-0cb81192619b)
+
+Cannot delete vpc link. Vpc link 'pvp4sh', is referenced in [GET:vqew8h:deployment] in format of [Method:Resource:Stage]. (Service: AmazonApiGateway; Status Code: 400; Error Code: BadRequestException; Request ID: 50fab48c-f040-4594-85cf-a8097dd6d5ed)
+

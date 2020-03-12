@@ -7,9 +7,9 @@ SUBNET_IDS=$(aws ec2 describe-subnets --query "Subnets[?VpcId==\`$DEFAULT_VPC_ID
 
 aws cloudformation create-stack --stack-name $SERVICE-application --template-body file://./cf/application.yaml \
     --capabilities CAPABILITY_IAM \
-    --parameters ParameterKey=Subnets,ParameterValue=\"$SUBNET_IDS\" \
-                 ParameterKey=VPC,ParameterValue=$DEFAULT_VPC_ID \
-                 ParameterKey=ServiceName,ParameterValue=$SERVICE \
+    --parameters ParameterKey=ServiceName,ParameterValue=$SERVICE \
                  ParameterKey=ECRRepositoryName,ParameterValue=$SERVICE
+#    --parameters ParameterKey=Subnets,ParameterValue=\"$SUBNET_IDS\" \
+#                 ParameterKey=VPC,ParameterValue=$DEFAULT_VPC_ID \
 
 aws cloudformation wait stack-create-complete --stack-name $SERVICE-application
