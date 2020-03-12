@@ -1,0 +1,267 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  APIDomainName:
+    Type: String
+    Default: "www.dev.zuehlke.p.iraten.ch"
+
+  UserPoolDomainName:
+    Type: String
+    Default: "www-dev-zuehlke-p-iraten-ch"
+
+  Subnets:
+    Type: "List<AWS::EC2::Subnet::Id>"
+
+  VPC:
+    Type: "AWS::EC2::VPC::Id"
+
+Resources:
+  S3BucketForWebsiteContent:
+    Type: AWS::S3::Bucket
+
+  LoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Scheme: internal
+      Subnets: !Ref Subnets
+      Type: network
+
+  Listener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Order: 1
+          TargetGroupArn: !Ref TargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: TCP
+
+  TargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Port: 80
+      Protocol: TCP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 60
+      TargetType: ip
+      VpcId: !Ref VPC
+
+  VPCLink:
+    Type: "AWS::ApiGateway::VpcLink"
+    Properties:
+      Name: Fargate Service NLB
+      TargetArns: 
+        - !Ref LoadBalancer
+
+  APIGateway:
+    Type: "AWS::ApiGateway::RestApi"
+    Properties:
+      FailOnWarnings: true
+      Name: TestAPI
+      Parameters:
+        endpointConfigurationTypes: REGIONAL
+
+  # IMPORTANT: super annoying, but true: change the logical resource name after API GW customizations to ensure re-deployment
+  APIDeployment15:
+    Type: "AWS::ApiGateway::Deployment"
+    Properties:
+      RestApiId: !Ref APIGateway
+      StageName: deployment      
+    DependsOn: APIMethod
+
+  APIPath:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      ParentId: !GetAtt APIGateway.RootResourceId
+      PathPart: "api"
+      RestApiId: !Ref APIGateway
+  
+  APIResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      ParentId: !Ref APIPath
+      PathPart: "{proxy+}"
+      RestApiId: !Ref APIGateway
+
+  WebSiteResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      ParentId: !GetAtt APIGateway.RootResourceId
+      PathPart: "{proxy+}"
+      RestApiId: !Ref APIGateway      
+
+  IndexMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Content-Type: "integration.response.header.Content-Type"
+        ConnectionType: INTERNET
+        IntegrationHttpMethod: GET
+        PassthroughBehavior: WHEN_NO_MATCH
+        Type: HTTP
+        Uri: !Join ['', ['https://', !Ref 'S3BucketForWebsiteContent', '.s3.eu-central-1.amazonaws.com/index.html']] #FIXME region independent
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Content-Type: true
+      ResourceId: !GetAtt APIGateway.RootResourceId
+      RestApiId: !Ref APIGateway
+
+  WebMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.proxy: true
+      HttpMethod: GET
+      Integration:
+        RequestParameters:
+          integration.request.path.proxy: 'method.request.path.proxy'
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Content-Type: "integration.response.header.Content-Type"
+        ConnectionType: INTERNET
+        IntegrationHttpMethod: GET
+        PassthroughBehavior: WHEN_NO_MATCH
+        Type: HTTP
+        Uri: !Join ['', ['https://', !Ref 'S3BucketForWebsiteContent', '.s3.eu-central-1.amazonaws.com/{proxy}']] #FIXME region independent
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Content-Type: true
+      ResourceId: !Ref WebSiteResource
+      RestApiId: !Ref APIGateway
+
+  APIMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      AuthorizationScopes:
+        - openid
+      AuthorizationType: COGNITO_USER_POOLS                         
+      RequestParameters:
+        method.request.path.proxy: true
+      AuthorizerId: !Ref Authorizer
+      HttpMethod: GET
+      Integration:
+        ConnectionId: !Ref VPCLink
+        RequestParameters:
+          integration.request.path.proxy: 'method.request.path.proxy'
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Content-Type: "integration.response.header.Content-Type"
+        ConnectionType: VPC_LINK
+        IntegrationHttpMethod: GET
+        PassthroughBehavior: WHEN_NO_MATCH
+        Type: HTTP
+        Uri: !Sub "http://foobar.ch/{proxy}"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Content-Type: true
+      ResourceId: !Ref APIResource
+      RestApiId: !Ref APIGateway
+
+  Authorizer:
+    Type: "AWS::ApiGateway::Authorizer"
+    Properties:
+      IdentitySource: method.request.header.Authorization
+      Name: Cognito
+      ProviderARNs:
+        - !GetAtt UserPool.Arn
+      RestApiId: !Ref APIGateway
+      Type: COGNITO_USER_POOLS
+  
+  CustomDomain:
+    Type: "AWS::ApiGateway::DomainName"
+    Properties:
+      RegionalCertificateArn: !ImportValue SSLCert
+      DomainName: !Ref APIDomainName
+      EndpointConfiguration:
+        Types: 
+          - REGIONAL
+
+  BasePathMapping:
+    Type: "AWS::ApiGateway::BasePathMapping"
+    Properties:
+      DomainName: !Ref APIDomainName
+      RestApiId: !Ref APIGateway
+      Stage: "deployment"
+    # IMPORTANT: super annoying, but true: change the logical resource name after API GW customizations to ensure re-deployment
+    DependsOn: APIDeployment15 
+
+  APIDNSName:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !ImportValue HostedZoneId
+      Comment: API GW
+      Name: !Ref APIDomainName
+      Type: CNAME
+      TTL: '60'
+      ResourceRecords:
+        - !GetAtt CustomDomain.RegionalDomainName
+
+  UserPool:
+    Type: "AWS::Cognito::UserPool"
+    Properties:
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: False
+        UnusedAccountValidityDays: 365
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+
+  UserPoolClient:
+    Type: "AWS::Cognito::UserPoolClient"
+    Properties:            
+      AllowedOAuthFlows:
+        - code
+        - implicit
+      AllowedOAuthFlowsUserPoolClient: True
+      AllowedOAuthScopes:
+        - openid
+      CallbackURLs:
+        - !Sub "https://${APIDomainName}/"
+      LogoutURLs:
+        - !Sub "https://${APIDomainName}/"
+      DefaultRedirectURI: !Sub "https://${APIDomainName}/"
+      GenerateSecret: True
+      SupportedIdentityProviders:
+        - COGNITO
+      UserPoolId: !Ref UserPool
+
+  UserPoolDomain:
+    Type: "AWS::Cognito::UserPoolDomain"
+    Properties:
+      Domain: !Ref UserPoolDomainName
+      UserPoolId: !Ref UserPool
+
+Outputs:
+  WebURL:
+    Value: !Sub "https://${APIDomainName}"
+
+  WebBucket:
+    Value: !Ref 'S3BucketForWebsiteContent'
+
+  CognitoUserPoolClientId:
+    Value: !Ref UserPoolClient
+
+  CognitoAppWebDomain:
+    Value: !Sub "${UserPoolDomainName}.auth.eu-central-1.amazoncognito.com" #FIXME region independent
+
+  TargetGroup:
+      Value: !Ref TargetGroup
+      Export:
+        Name: TargetGroup

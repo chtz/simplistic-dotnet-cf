@@ -94,10 +94,13 @@ Run app in AWS:
     # Create wildcard SSL certificate (*.<your new DNS domain>)
     ./create_stack_acm.sh
 
+    # Create API Gateway et al
+    ./create_stack_apigw_nlb.sh
+
     # Create private docker image repository (ECR)
     ./create_stack_ecr.sh
     
-    # Create ALB, ECS cluster & task definition & service (desired count=0), RDS instance and Security Groups (in default VPC), etc.
+    # Create ECS cluster & task definition & service (desired count=0), RDS instance and Security Groups (in default VPC), etc.
     ./create_stack_application.sh
 
     # Optional: Subscribe to error log alerts

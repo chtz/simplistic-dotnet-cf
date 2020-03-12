@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Amazon Cognito Demo</title>
+        <script src="js/vendor/aws-cognito-sdk.min.js"></script>
+        <script src="js/vendor/amazon-cognito-auth.min.js"></script>
+        <script src="js/app.js"></script>
+        <script src="js/config.js"></script>
+    </head>
+    <body onload="init()">
+        <table border="2">
+            <tr>
+                <td>Logged in as:</td>
+                <td id="loggedInUser"></td>
+                <td>
+                    <button onclick="logout()">Logout</button>
+                </td>
+            </tr>
+            <tr>
+                <td>API call result:</td>
+                <td id="apiOut"></td>
+                <td></td>
+            </tr>
+        </table>
+    </body>
+</html>

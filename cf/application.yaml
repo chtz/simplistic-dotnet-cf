@@ -22,134 +22,7 @@ Parameters:
     Type: Number    
     Default: 0
 
-  Host:
-    Type: String
-    Default: "www"
-
-  UserPoolDomainName:
-    Type: String
-    Default: "www-dev-zuehlke-p-iraten-ch"
-
 Resources:
-  LoadBalancer:
-    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
-    Properties:
-      Name: !Ref ServiceName
-      LoadBalancerAttributes:
-        - Key: idle_timeout.timeout_seconds
-          Value: 60
-      Scheme: internet-facing
-      SecurityGroups:
-        - !Ref LoadBalancerSecurityGroup
-      Subnets: !Ref Subnets
-
-  LoadBalancerSecurityGroup:
-    Type: "AWS::EC2::SecurityGroup"
-    Properties:
-      GroupDescription: HTTPS 443
-      SecurityGroupIngress:
-        - CidrIp: "0.0.0.0/0"
-          FromPort: 443
-          IpProtocol: tcp
-          ToPort: 443
-      VpcId: !Ref VPC
-
-  UserPool:
-    Type: "AWS::Cognito::UserPool"
-    Properties:
-      AdminCreateUserConfig:
-        AllowAdminCreateUserOnly: False
-        UnusedAccountValidityDays: 365
-      UsernameAttributes:
-        - email
-      AutoVerifiedAttributes:
-        - email
-
-  UserPoolClient:
-    Type: "AWS::Cognito::UserPoolClient"
-    Properties:            
-      AllowedOAuthFlows:
-        - code
-      AllowedOAuthFlowsUserPoolClient: True
-      AllowedOAuthScopes:
-        - openid
-      CallbackURLs:
-        #- !Sub "https://${CallbackCNAME}/oauth2/idpresponse"
-        - !Join
-          - ''
-          - - "https://"
-            - !Ref Host
-            - '.'
-            - !ImportValue Domain
-            - "/oauth2/idpresponse"
-      DefaultRedirectURI: !Join
-        - ''
-        - - "https://"
-          - !Ref Host
-          - '.'
-          - !ImportValue Domain
-          - "/oauth2/idpresponse"
-      GenerateSecret: True
-      SupportedIdentityProviders:
-        - COGNITO
-      UserPoolId: !Ref UserPool
-
-  UserPoolDomain:
-    Type: "AWS::Cognito::UserPoolDomain"
-    Properties:
-      Domain: !Ref UserPoolDomainName
-      UserPoolId: !Ref UserPool
-
-  Listener:
-    Type: "AWS::ElasticLoadBalancingV2::Listener"
-    Properties:
-      Certificates:
-        - CertificateArn: !ImportValue SSLCert
-      DefaultActions:
-        - Order: 1
-          AuthenticateCognitoConfig:
-            UserPoolArn: !GetAtt UserPool.Arn
-            UserPoolClientId: !Ref UserPoolClient
-            UserPoolDomain: !Ref UserPoolDomainName
-          Type: authenticate-cognito
-        - Order: 2
-          TargetGroupArn: !Ref TargetGroup
-          Type: forward
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 443
-      Protocol: HTTPS
-      SslPolicy: ELBSecurityPolicy-FS-2018-06
-
-  CNAME:
-    Type: "AWS::Route53::RecordSet"
-    Properties:
-      HostedZoneId: !ImportValue HostedZoneId
-      Name: !Join
-        - ''
-        - - !Ref Host
-          - '.'
-          - !ImportValue Domain
-      ResourceRecords:
-        - !GetAtt LoadBalancer.DNSName
-      TTL: 60  
-      Type: CNAME
-
-  TargetGroup:
-    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
-    Properties:
-      HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /WeatherForecast
-      HealthCheckTimeoutSeconds: 2
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 4
-      Port: 80
-      Protocol: HTTP
-      TargetGroupAttributes:
-        - Key: deregistration_delay.timeout_seconds
-          Value: 60
-      TargetType: ip
-      VpcId: !Ref VPC
-
   ECSExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -213,9 +86,8 @@ Resources:
     Properties:
       ClusterName: !Ref ServiceName
 
-  FargateService:
+  FargateService: #FIXME ensure no public IPs (i.e. place fargate tasks in private subnets)
     Type: "AWS::ECS::Service"
-    DependsOn: Listener
     Properties:
       ServiceName: !Ref ServiceName
       Cluster: !Ref FargateCluster
@@ -227,7 +99,7 @@ Resources:
       LoadBalancers:
         - ContainerName: application
           ContainerPort: 80
-          TargetGroupArn: !Ref TargetGroup
+          TargetGroupArn: !ImportValue TargetGroup
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
@@ -245,7 +117,8 @@ Resources:
       SecurityGroupIngress:
         - FromPort: 80
           IpProtocol: tcp
-          SourceSecurityGroupId: !GetAtt LoadBalancerSecurityGroup.GroupId
+          #SourceSecurityGroupId: !GetAtt LoadBalancerSecurityGroup.GroupId #NLBs cannot have security groups
+          CidrIp: "0.0.0.0/0"
           ToPort: 80          
       VpcId: !Ref VPC
 
@@ -386,13 +259,6 @@ Resources:
       TargetType: AWS::RDS::DBInstance
 
 Outputs:
-  LoadBalancer:
-    Value: !Join
-      - ''
-      - - !Ref Host
-        - '.'
-        - !ImportValue Domain
-
   AlarmTopicArn:
     Value: !Ref AlarmTopic
 
