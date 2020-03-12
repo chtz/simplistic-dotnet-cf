@@ -67,7 +67,7 @@ Resources:
         endpointConfigurationTypes: REGIONAL
 
   # IMPORTANT: super annoying, but true: change the logical resource name after API GW customizations to ensure re-deployment
-  APIDeployment15:
+  APIDeployment18:
     Type: "AWS::ApiGateway::Deployment"
     Properties:
       RestApiId: !Ref APIGateway
@@ -146,17 +146,20 @@ Resources:
   APIMethod:
     Type: "AWS::ApiGateway::Method"
     Properties:
-      AuthorizationScopes:
-        - openid
+      #AuthorizationScopes:
+      #  - openid
       AuthorizationType: COGNITO_USER_POOLS                         
       RequestParameters:
         method.request.path.proxy: true
+        method.request.header.Authorization: true
       AuthorizerId: !Ref Authorizer
       HttpMethod: GET
       Integration:
         ConnectionId: !Ref VPCLink
         RequestParameters:
           integration.request.path.proxy: 'method.request.path.proxy'
+          integration.request.header.Authorization: 'method.request.header.Authorization'
+          integration.request.header.x-auth-mail: 'context.authorizer.claims.email'
         IntegrationResponses:
           - StatusCode: '200'
             ResponseParameters:
@@ -199,7 +202,7 @@ Resources:
       RestApiId: !Ref APIGateway
       Stage: "deployment"
     # IMPORTANT: super annoying, but true: change the logical resource name after API GW customizations to ensure re-deployment
-    DependsOn: APIDeployment15 
+    DependsOn: APIDeployment18
 
   APIDNSName:
     Type: AWS::Route53::RecordSet

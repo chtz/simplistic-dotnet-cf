@@ -5,28 +5,9 @@ function init() {
 
   gCognitoAuth.userhandler = {
     onSuccess: function(result) {
-        console.log("COGNITO SUCCESS!", result);
-        console.log("Token", result.accessToken.jwtToken);
+      console.log("COGNITO SUCCESS!", result);
 
-        var xmlhttp = new XMLHttpRequest();
-        var url = "/api/WeatherForecast";
-        xmlhttp.open('GET', url);
-        xmlhttp.setRequestHeader('Authorization', result.accessToken.jwtToken); 
-        xmlhttp.withCredentials = false;
-        xmlhttp.onload = function() {
-          if (this.status == 200) {
-            var data = this.responseText;
-            console.log('Success & Data', data);
-
-            document.getElementById('apiOut').textContent = data;
-          } else {
-            console.log('Success, but code != 200');
-          }
-        };
-        xmlhttp.onerror = function(err) {
-          console.log('Error', err);
-        }
-        xmlhttp.send();
+      //... xmlhttp.setRequestHeader('Authorization', result.accessToken.jwtToken); ...
     },
     onFailure: function(err) {
         console.log("COGNITO FAIL!", err);
@@ -37,7 +18,34 @@ function init() {
 
   checkLogin();
 
-  document.getElementById('loggedInUser').textContent = gCognitoAuth.getUsername();
+  if (!gCognitoAuth.isUserSignedIn()) {
+    document.getElementById('loggedInUser').textContent = "not logged in";
+    document.getElementById('apiOut').textContent = "no api call";
+  }
+  else {
+    //document.getElementById('loggedInUser').textContent = gCognitoAuth.getUsername();
+    document.getElementById('loggedInUser').textContent = JSON.parse(atob(gCognitoAuth.getSignInUserSession().getIdToken().jwtToken.split('.')[1])).email; // FIXME ;-) there must be a better way
+
+    var xmlhttp = new XMLHttpRequest();
+    var url = "/api/WeatherForecast";
+    xmlhttp.open('GET', url);
+    xmlhttp.setRequestHeader('Authorization', gCognitoAuth.getSignInUserSession().getIdToken().jwtToken); 
+    xmlhttp.withCredentials = false;
+    xmlhttp.onload = function() {
+      if (this.status == 200) {
+        var data = this.responseText;
+        console.log('API 200', data);
+
+        document.getElementById('apiOut').textContent = data;
+      } else {
+        console.log('API != 200');
+      }
+    };
+    xmlhttp.onerror = function(err) {
+      console.log('Error', err);
+    }
+    xmlhttp.send();
+  }
 }
 
 
