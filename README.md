@@ -128,3 +128,9 @@ Run app in AWS:
     ./delete_stack_ecr.sh
 
 Enjoy!
+
+## TODOs
+
+- Move Service to private subnet (otherwise internet users can access the service unauthenticated!!!)
+- Ensure Service != 200's are handled correctly in API
+- Update diagram
