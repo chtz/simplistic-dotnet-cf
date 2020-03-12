@@ -108,16 +108,16 @@ namespace TodoApi
                     services.AddAWSService<IAmazonSQS>();
                     services.AddHostedService<Worker>();   
 
-                    #services.AddCors(options =>
-                    #{
-                    #    options.AddDefaultPolicy(builder =>
-                    #    {
-                    #        builder.WithOrigins("https://web.dev.zuehlke.p.iraten.ch") //FIXME hard-coded
-                    #        .AllowAnyHeader()
-                    #        .AllowAnyMethod()
-                    #        .AllowCredentials();
-                    #    });
-                    #});
+                    /* services.AddCors(options =>
+                    {
+                        options.AddDefaultPolicy(builder =>
+                        {
+                            builder.WithOrigins("https://web.dev.zuehlke.p.iraten.ch") //FIXME hard-coded
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                        });
+                    }); */
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
