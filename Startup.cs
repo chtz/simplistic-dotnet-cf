@@ -70,6 +70,8 @@ namespace TodoApi
 
             app.UseAuthorization();
 
+            //app.UseCors();
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

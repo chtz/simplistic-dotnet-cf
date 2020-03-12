@@ -61,7 +61,11 @@ namespace TodoApi
                 {
                     throw e; //aborts app with ... "Level":"Fatal","MessageTemplate":"Application start-up failed","Exception":"System.UriFormatException: Invalid URI:  ...
                 }
-                catch (Exception e) 
+                catch (System.Threading.Tasks.TaskCanceledException e)
+                {
+                    _logger.LogInformation("SQS poller canceled: {exception}", e);
+                }
+                catch (Exception e) //FIXME this is ok during shutdown: System.Threading.Tasks.TaskCanceledException: The operation was canceled.\n ---> System.IO.IOException: Unable to read data from the transport connection: Operation canceled.\n ---> System.Net.Sockets.SocketException (125): Operation canceled
                 {
                     _logger.LogError("SQS polling- or message processing issue (re-trying in 10s): {exception}", e); //FIXME no blind retry in prod ;-)
 
@@ -78,8 +82,7 @@ namespace TodoApi
             Log.Logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-                //.WriteTo.Console(new RenderedCompactJsonFormatter())
-                .WriteTo.Console(new JsonFormatter())
+                .WriteTo.Console(new JsonFormatter()) //.WriteTo.Console(new RenderedCompactJsonFormatter()) 
                 .CreateLogger();
         
             try
@@ -103,7 +106,18 @@ namespace TodoApi
                 .ConfigureServices(services =>
                 {
                     services.AddAWSService<IAmazonSQS>();
-                    services.AddHostedService<Worker>();                    
+                    services.AddHostedService<Worker>();   
+
+                    #services.AddCors(options =>
+                    #{
+                    #    options.AddDefaultPolicy(builder =>
+                    #    {
+                    #        builder.WithOrigins("https://web.dev.zuehlke.p.iraten.ch") //FIXME hard-coded
+                    #        .AllowAnyHeader()
+                    #        .AllowAnyMethod()
+                    #        .AllowCredentials();
+                    #    });
+                    #});
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {

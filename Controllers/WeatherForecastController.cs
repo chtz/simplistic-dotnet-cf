@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+//using Microsoft.AspNetCore.Cors;
 
 namespace TodoApi.Controllers
 {
@@ -27,6 +28,7 @@ namespace TodoApi.Controllers
             _configuration = configuration;
         }
 
+        //[EnableCors]
         [HttpGet]
         public IEnumerable<WeatherForecast> Get(string err = null)
         {
