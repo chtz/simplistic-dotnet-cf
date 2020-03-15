@@ -132,7 +132,6 @@ Enjoy!
 
 ## TODOs
 
-- API gateway: ensure HTTP code != 200's is handled correctly
-- Update diagram (API GW, NLB et al)
-- Improved network security API GW-NLB-Services
+- API gateway: ensure HTTP code != 200 is handled correctly
 - Proper way to delete API GW, NLB and VPC Link
+- Improved network security API GW-NLB-Services
