@@ -86,7 +86,7 @@ Run app with docker:
 
 Run app in AWS:
 
-    # Create Route53 hosted zone and deploy ACM certificate auto-validation lambda (activate CloudTrail)
+    # Create Route53 hosted zone and deploy ACM certificate auto-validation Lambda (also activate CloudTrail for this)
     ./create_stack_autovalidating_hostedzone.sh <your new DNS domain>
 
     # Manual step: update your domain name registrar's configuration (NS servers output from previous step)
@@ -94,14 +94,11 @@ Run app in AWS:
     # Create wildcard SSL certificate (*.<your new DNS domain>)
     ./create_stack_acm.sh
 
-    # Create API Gateway et al
-    ./create_stack_apigw_nlb.sh
-
     # Create private docker image repository (ECR)
     ./create_stack_ecr.sh
     
-    # Create ECS cluster & task definition & service (desired count=0), RDS instance and Security Groups (in default VPC), etc.
-    ./create_stack_application.sh
+    # Create VPC for Fargate services and NLB, create API gateway and NLB and VPC link, create ECS cluster and Fargate service (desired count=0) and RDS instance
+    ./create_all_stacks_vpc_apigw_app.sh
 
     # Optional: Subscribe to error log alerts
     ./topic_subscribe.sh <your-email>
@@ -117,6 +114,8 @@ Run app in AWS:
     # Send HTTP request to service
     ./curl_stack_application.sh
    
+    # Manual step: use your web browser to test Cognito authentication (signup and signin)
+
     # CloudWatch Logs Insighs sample: Show recent info logs (somewhat delayed)
     ./logs_insights_stack_application.sh
 
@@ -124,22 +123,16 @@ Run app in AWS:
     ./logs_watch_stack_application.sh
 
     # Don't forget to delete all AWS resources after testing (to keep the AWS bill low)
-    ./delete_stack_application.sh 
+    ./delete_all_stacks_vpc_apigw_app.sh
     ./delete_stack_ecr.sh
+    aws cloudformation delete-stack --stack-name acm-wildcard
+    aws cloudformation delete-stack --stack-name autovalidating-hostedzone
 
 Enjoy!
 
 ## TODOs
 
-### Ensure Service != 200's are handled correctly in API
-
-### Update diagram
-
-### Fix stack deletion issue
-
-The following resource(s) failed to delete: [LoadBalancer, VPCLink].
-
-Load balancer 'arn:aws:elasticloadbalancing:eu-central-1:028619293920:loadbalancer/net/apigw-LoadB-5IBHWXFVKK2/ecd7931edadecc64' cannot be deleted because it is currently associated with another service (Service: AmazonElasticLoadBalancingV2; Status Code: 400; Error Code: ResourceInUse; Request ID: e29c109c-7ce1-41de-8060-0cb81192619b)
-
-Cannot delete vpc link. Vpc link 'pvp4sh', is referenced in [GET:vqew8h:deployment] in format of [Method:Resource:Stage]. (Service: AmazonApiGateway; Status Code: 400; Error Code: BadRequestException; Request ID: 50fab48c-f040-4594-85cf-a8097dd6d5ed)
-
+- API gateway: ensure HTTP code != 200's is handled correctly
+- Update diagram (API GW, NLB et al)
+- Improved network security API GW-NLB-Services
+- Proper way to delete API GW, NLB and VPC Link

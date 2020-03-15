@@ -74,7 +74,9 @@ Resources:
     Properties:
       RestApiId: !Ref APIGateway
       StageName: deployment      
-    DependsOn: APIMethod
+    DependsOn: 
+      - APIMethod
+      #- VPCLink
 
   APIPath:
     Type: "AWS::ApiGateway::Resource"
