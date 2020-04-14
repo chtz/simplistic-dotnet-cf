@@ -28,7 +28,7 @@ Parameters:
 
   UserPoolDomainName:
     Type: String
-    Default: "www-dev-zuehlke-p-iraten-ch"
+    Default: "www-fab1-zuehlke-p-iraten-ch" #FIXME derive
 
 Resources:
   LoadBalancer:

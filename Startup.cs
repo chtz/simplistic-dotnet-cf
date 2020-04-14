@@ -60,7 +60,7 @@ namespace TodoApi
 
             app.Use(async (context, next) =>
             {
-                using (LogContext.PushProperty("Request", context.Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()), destructureObjects: true)) //TODO too verbose ;-)
+                using (LogContext.PushProperty("Request", context.Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()), destructureObjects: true)) //TODO too verbose ;-) //FIXME DON'T LOG AUTH TOKENS!
                 {
                     await next.Invoke();
                 }

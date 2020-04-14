@@ -106,10 +106,10 @@ Run app in AWS:
     # Build .NET service and docker image, push image to ECR
     ./docker_build.sh
     ./ecr_dockerlogin.sh
-    ./ecr_dockerpush.sh 
+    ./ecr_dockerpush.sh latest
 
     # Set desired count to 1 ("deploy" dockerized .NET service)
-    ./update_stack_application.sh
+    ./update_stack_application.sh latest
 
     # Send HTTP request to service
     ./curl_stack_application.sh
